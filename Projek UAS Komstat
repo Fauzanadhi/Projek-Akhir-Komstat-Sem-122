@@ -174,3 +174,43 @@ library(dplyr)
       cat("\n")
     }
   })
+
+  # Correlation heatmap
+  output$correlation_heatmap <- renderPlot({
+    req(values$correlation_matrix)
+    
+    # Konversi matrix ke format long untuk ggplot
+    melted_corr <- melt(values$correlation_matrix)
+    
+    ggplot(melted_corr, aes(Var1, Var2, fill = value)) +
+      geom_tile(color = "white", size = 0.5) +
+      scale_fill_gradient2(low = "#E74C3C", high = "#27AE60", mid = "white", 
+                           midpoint = 0, limit = c(-1,1), space = "Lab", 
+                           name="Korelasi\nSpearman") +
+      geom_text(aes(label = value), color = "black", fontface = "bold", size = 4) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#000000"),
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, color = "#000000", size = 12, face = "bold"),
+        axis.text.y = element_text(color = "#000000", size = 12, face = "bold"),
+        legend.title = element_text(color = "#000000", face = "bold"),
+        legend.text = element_text(color = "#000000", face = "bold"),
+        panel.grid = element_blank()
+      ) +
+      labs(title = "Heatmap Korelasi Spearman Antar Variabel Numerik") +
+      coord_fixed()
+  })
+  
+  output$heatmap_description <- renderUI({
+    req(values$correlation_matrix)
+    HTML(paste0(
+      "<div style='background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; border: 1px solid #bbdefb;'>",
+      "<h6 style='color: #000000; font-weight: bold;'>📈 Interpretasi Heatmap</h6>",
+      "<p style='margin-bottom: 8px; color: #000000; font-weight: bold;'><strong>Warna Merah:</strong> Korelasi negatif (semakin gelap = semakin kuat)</p>",
+      "<p style='margin-bottom: 8px; color: #000000; font-weight: bold;'><strong>Warna Hijau:</strong> Korelasi positif (semakin gelap = semakin kuat)</p>",
+      "<p style='margin-bottom: 8px; color: #000000; font-weight: bold;'><strong>Warna Putih:</strong> Tidak ada korelasi (mendekati 0)</p>",
+      "<p style='margin: 0; color: #000000; font-weight: bold;'><strong>Angka dalam sel:</strong> Nilai koefisien korelasi Spearman</p>",
+      "</div>"
+    ))
+  })
