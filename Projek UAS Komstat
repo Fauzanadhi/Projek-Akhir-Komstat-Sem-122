@@ -4,6 +4,18 @@ library(readr)
 library(readxl)
 library(dplyr)
 
+#UI
+ui <- fluidPage(
+  useShinyFeedback(),
+  theme = bs_theme(
+    bootswatch = "superhero",
+    primary = "#2E8B57",
+    success = "#28A745",
+    info = "#17A2B8",
+    warning = "#FFC107",
+    danger = "#DC3545"
+  ),
+
  # Render hasil Spearman
   output$spearman_result <- renderPrint({
     req(values$spearman_result)
@@ -78,6 +90,8 @@ library(dplyr)
       "</div>"
     ))
   })
+
+=======
 
  # Render hasil Cramér's V
   output$cramer_result <- renderPrint({
