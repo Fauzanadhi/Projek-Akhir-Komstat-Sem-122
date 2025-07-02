@@ -54,3 +54,61 @@ ui <- fluidPage(
   )
 )
 
+output$download_report <- downloadHandler(
+    filename = function() {
+      paste("Laporan_Analisis_", Sys.Date(), ".docx", sep = "")
+    },
+    content = function(file) {
+      # Show progress message menggunakan showNotification
+      notification_id <- showNotification(
+        "🔄 Sedang mempersiapkan laporan Word...", 
+        duration = NULL, 
+        type = "message"
+      )
+      
+      tryCatch({
+        # Create a temporary Rmd file
+        tempReport <- file.path(tempdir(), "report.Rmd")
+        
+        # Write the RMD content to temp file
+        writeLines(rmd_content, tempReport)
+        
+        # Render the document with proper parameters
+        rmarkdown::render(
+          input = tempReport,
+          output_format = rmarkdown::word_document(),
+          output_file = file,
+          params = list(
+            spearman = values$spearman_result,
+            cramer = values$cramer_result,
+            correlation = values$correlation_matrix
+          ),
+          envir = new.env(parent = globalenv()),
+          quiet = TRUE
+        )
+        
+        # Remove progress notification
+        removeNotification(notification_id)
+        
+        # Show success notification
+        showNotification(
+          "✅ Laporan Word berhasil diunduh!", 
+          duration = 5, 
+          type = "message"
+        )
+        
+      }, error = function(e) {
+        # Remove progress notification
+        removeNotification(notification_id)
+        
+        # Show error notification
+        showNotification(
+          paste("❌ Error membuat laporan:", e$message), 
+          duration = 10, 
+          type = "error"
+        )
+        
+        print(paste("Debug error:", e$message))  # For debugging
+      })
+    }
+  )
