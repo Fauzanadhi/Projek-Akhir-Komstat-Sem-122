@@ -54,3 +54,13 @@ ui <- fluidPage(
   )
 )
 
+```{r correlation-matrix}
+if (!is.null(params$correlation)) {
+  kable(params$correlation, 
+        caption = "Matrix Korelasi Spearman untuk semua variabel numerik",
+        digits = 3,
+        align = "c")
+} else {
+  cat("Matrix korelasi tidak tersedia\\n")
+}
+```
