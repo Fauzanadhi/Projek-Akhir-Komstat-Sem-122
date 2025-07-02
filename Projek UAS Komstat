@@ -15,3 +15,78 @@ ui <- fluidPage(
     warning = "#FFC107",
     danger = "#DC3545"
   ),
+
+  # Render hasil Spearman
+  output$spearman_result <- renderPrint({
+    req(values$spearman_result)
+    test <- values$spearman_result$test
+    cat("Metode:", test$method, "\n")
+    cat("Koefisien rho:", round(test$estimate, 4), "\n")
+    cat("p-value:", format(test$p.value, scientific = TRUE), "\n")
+    if(!is.null(test$conf.int)) {
+      cat("95% CI:", paste(round(test$conf.int, 4), collapse = " - "), "\n")
+    }
+  })
+  
+  output$spearman_plot <- renderPlotly({
+    req(values$spearman_result)
+    
+    spearman_data <- values$spearman_result$data
+    p <- ggplot(spearman_data, aes(x = x, y = y)) +
+      geom_point(color = "#E74C3C", alpha = 0.6, size = 2) +
+      geom_smooth(method = "lm", se = TRUE, color = "#3498DB", fill = "#AED6F1") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 14, face = "bold", color = "#2c3e50"),
+        axis.title = element_text(size = 12, color = "#2c3e50"),
+        axis.text = element_text(size = 10, color = "#34495e"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "#ecf0f1", size = 0.5)
+      ) +
+      labs(
+        title = paste("Scatterplot:", values$spearman_result$x, "vs", values$spearman_result$y),
+        x = values$spearman_result$x, 
+        y = values$spearman_result$y
+      )
+    
+    ggplotly(p, tooltip = c("x", "y"))
+  })
+  
+  output$spearman_interpretation <- renderUI({
+    req(values$spearman_result)
+    
+    test <- values$spearman_result$test
+    r <- round(test$estimate, 3)
+    pval <- test$p.value
+    
+    # Interpretasi kekuatan korelasi
+    strength <- if(abs(r) >= 0.7) "kuat" else if(abs(r) >= 0.3) "sedang" else "lemah"
+    direction <- if(r > 0) "positif" else "negatif"
+    
+    interpret <- if (pval < 0.05) {
+      paste0("✅ <strong style='color: #28a745; font-weight: bold;'>Signifikan</strong> (p < 0.05): Terdapat korelasi yang signifikan antara variabel.")
+    } else {
+      paste0("❌ <strong style='color: #dc3545; font-weight: bold;'>Tidak signifikan</strong> (p > 0.05): Tidak terdapat korelasi yang signifikan antara variabel.")
+    }
+    
+    HTML(paste0(
+      "<div style='background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8; border: 1px solid #dee2e6;'>",
+      "<h5 style='color: #212529; margin-bottom: 10px; font-weight: bold;'>📊 Interpretasi Hasil</h5>",
+      "<p style='color: #212529; font-weight: 500;'><strong>Korelasi:</strong> ", r, " (", strength, ", ", direction, ")</p>",
+      "<p style='color: #212529; font-weight: 500;'>", interpret, "</p>",
+      "</div>"
+    ))
+  })
+  
+  output$spearman_detail <- renderUI({
+    req(values$spearman_result)
+    
+    HTML(paste0(
+      "<div style='background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; border: 1px solid #ffeaa7;'>",
+      "<h6 style='color: #212529; font-weight: bold;'>💡 Penjelasan Uji Spearman</h6>",
+      "<p style='margin-bottom: 5px; color: #212529; font-weight: 500;'><strong>Tujuan:</strong> Mengukur kekuatan dan arah hubungan monoton antara dua variabel numerik</p>",
+      "<p style='margin-bottom: 5px; color: #212529; font-weight: 500;'><strong>Asumsi:</strong> Data tidak harus terdistribusi normal</p>",
+      "<p style='margin: 0; color: #212529; font-weight: 500;'><strong>Interpretasi rho:</strong> -1 (korelasi negatif sempurna) hingga +1 (korelasi positif sempurna)</p>",
+      "</div>"
+    ))
+  })
