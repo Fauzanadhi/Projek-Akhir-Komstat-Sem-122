@@ -78,4 +78,99 @@ library(dplyr)
       "</div>"
     ))
   })
+
+ # Render hasil Cramér's V
+  output$cramer_result <- renderPrint({
+    req(values$cramer_result)
+    cat("Uji Asosiasi Cramér's V\n")
+    cat("========================\n")
+    cat("Cramér's V:", round(values$cramer_result$V, 4), "\n")
+    cat("Chi-square:", round(values$cramer_result$chisq$statistic, 4), "\n")
+    cat("p-value:", format(values$cramer_result$pval, scientific = TRUE), "\n")
+    cat("Degrees of freedom:", values$cramer_result$chisq$parameter, "\n")
+  })
   
+  output$cramer_plot <- renderPlot({
+    req(values$cramer_result)
+    
+    # Buat mosaic plot yang lebih menarik
+    tbl <- values$cramer_result$table
+    df_plot <- as.data.frame(tbl)
+    names(df_plot) <- c("X", "Y", "Freq")
+    
+    ggplot(df_plot, aes(x = X, y = Y)) +
+      geom_tile(aes(fill = Freq), color = "white", size = 0.5) +
+      geom_text(aes(label = Freq), color = "white", fontface = "bold", size = 4) +
+      scale_fill_gradient(low = "#3498DB", high = "#E74C3C", name = "Frekuensi") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 14, face = "bold", hjust = 0.5, color = "#2c3e50"),
+        axis.title = element_text(size = 12, color = "#2c3e50"),
+        axis.text = element_text(size = 10, color = "#34495e"),
+        legend.position = "right",
+        legend.title = element_text(color = "#2c3e50"),
+        legend.text = element_text(color = "#2c3e50"),
+        panel.grid = element_blank()
+      ) +
+      labs(
+        title = paste("Heatmap Kontingensi:", values$cramer_result$x, "vs", values$cramer_result$y),
+        x = values$cramer_result$x, 
+        y = values$cramer_result$y
+      )
+  })
+  
+  output$cramer_interpretation <- renderUI({
+    req(values$cramer_result)
+    
+    V <- round(values$cramer_result$V, 3)
+    pval <- values$cramer_result$pval
+    
+    # Interpretasi kekuatan asosiasi
+    strength <- if(V >= 0.5) "kuat" else if(V >= 0.3) "sedang" else if(V >= 0.1) "lemah" else "sangat lemah"
+    
+    interpret <- if (pval < 0.05) {
+      paste0("✅ <strong style='color: #28a745; font-weight: bold;'>Signifikan</strong> (p < 0.05): Terdapat asosiasi yang signifikan antara variabel.")
+    } else {
+      paste0("❌ <strong style='color: #dc3545; font-weight: bold;'>Tidak signifikan</strong> (p > 0.05): Tidak terdapat asosiasi yang signifikan antara variabel.")
+    }
+    
+    HTML(paste0(
+      "<div style='background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; border: 1px solid #dee2e6;'>",
+      "<h5 style='color: #000000; margin-bottom: 10px; font-weight: bold;'>📊 Interpretasi Hasil</h5>",
+      "<p style='color: #000000; font-weight: bold;'><strong>Cramér's V:</strong> ", V, " (asosiasi ", strength, ")</p>",
+      "<p style='color: #000000; font-weight: bold;'>", interpret, "</p>",
+      "</div>"
+    ))
+  })
+  
+  output$cramer_detail <- renderUI({
+    HTML(paste0(
+      "<div style='background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; border: 1px solid #ffeaa7;'>",
+      "<h6 style='color: #000000; font-weight: bold;'>💡 Penjelasan Uji Cramér's V</h6>",
+      "<p style='margin-bottom: 5px; color: #000000; font-weight: bold;'><strong>Tujuan:</strong> Mengukur kekuatan asosiasi antara dua variabel kategorik</p>",
+      "<p style='margin-bottom: 5px; color: #000000; font-weight: bold;'><strong>Range:</strong> 0 (tidak ada asosiasi) hingga 1 (asosiasi sempurna)</p>",
+      "<p style='margin: 0; color: #000000; font-weight: bold;'><strong>Interpretasi:</strong> >0.5 (kuat), 0.3-0.5 (sedang), 0.1-0.3 (lemah), <0.1 (sangat lemah)</p>",
+      "</div>"
+    ))
+  })
+  
+  output$correlation_text <- renderPrint({
+    req(values$correlation_matrix)
+    cat("Matrix Korelasi Spearman untuk semua variabel numerik:\n\n")
+    
+    # Format matrix seperti gambar kedua
+    mat <- values$correlation_matrix
+    var_names <- colnames(mat)
+    
+    # Print header dengan spacing yang tepat
+    cat(sprintf("%-15s", ""), paste(sprintf("%10s", var_names), collapse = ""), "\n")
+    
+    # Print setiap baris dengan nama variabel
+    for(i in 1:nrow(mat)) {
+      cat(sprintf("%-15s", rownames(mat)[i]))
+      for(j in 1:ncol(mat)) {
+        cat(sprintf("%10.2f", mat[i,j]))
+      }
+      cat("\n")
+    }
+  })
